@@ -398,7 +398,7 @@
 // ════════════════════════════════════════════
 const CONFIG = {
   CLIENT_ID   : '1062908701404-mqjmavqt9algjb05h7ks85dfvs1n978t.apps.googleusercontent.com',
-  FOLDER_NAME : 'DATA_backup',
+  FOLDER_NAME : 'HUDARAB_Backups',
   REDIRECT_URI: 'https://meher1973.github.io/hudarab/',
 };
 
@@ -568,32 +568,51 @@ async function driveRequest(url, options = {}) {
 }
 
 // ════════════════════════════════════════════
-//  GET LATEST ZIP — cherche DATA_backup*.zip le plus récent dans Drive
+//  ÉTAPE 1 : trouver le dossier HUDARAB_Backups dans Drive
 // ════════════════════════════════════════════
-async function getLatestZip() {
+async function getDriveFolderId() {
   const q = encodeURIComponent(
-    `name contains '${CONFIG.FOLDER_NAME}' and trashed=false`
+    `name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
   );
   const res = await driveRequest(
-    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime,mimeType)`
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  if (!res) return null;
+  const data = await res.json();
+  if (!data.files || data.files.length === 0) return null;
+  console.log('[HUDARAB] Dossier trouvé:', data.files[0].name, data.files[0].id);
+  return data.files[0].id;
+}
+
+// ════════════════════════════════════════════
+//  ÉTAPE 2 : trouver le ZIP le plus récent dans le dossier
+//  Format : HUDARAB_Backup_YYYYMMDD_HHMMSS.zip
+// ════════════════════════════════════════════
+async function getLatestZipInFolder(folderId) {
+  const q = encodeURIComponent(
+    `'${folderId}' in parents and name contains 'HUDARAB_Backup_' and trashed=false`
+  );
+  const res = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name+desc&fields=files(id,name,modifiedTime)`
   );
   if (!res) return null;
   const data = await res.json();
   if (!data.files || data.files.length === 0) return null;
 
-  // Tri JS backup au cas où l'API ignore orderBy
-  data.files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
+  // Tri alphabétique desc = tri chronologique desc (YYYYMMDD_HHMMSS)
+  // Double sécurité : tri JS aussi
+  data.files.sort((a, b) => b.name.localeCompare(a.name));
 
-  console.log('[HUDARAB] Fichiers trouvés:', data.files.map(f => f.name));
-  console.log('[HUDARAB] Sélectionné:', data.files[0].name);
-
-  return data.files[0]; // { id, name, modifiedTime, mimeType }
+  console.log('[HUDARAB] ZIPs trouvés:', data.files.map(f => f.name));
+  console.log('[HUDARAB] ZIP sélectionné:', data.files[0].name);
+  return data.files[0];
 }
 
 // ════════════════════════════════════════════
 //  REFRESH DONNÉES DRIVE
-//  Télécharge le ZIP le plus récent, l'extrait via JSZip,
-//  puis lit ref_data.json dedans
+//  1. Trouve dossier HUDARAB_Backups
+//  2. Prend le ZIP le plus récent dedans
+//  3. Extrait via JSZip → lit ref_data.json
 // ════════════════════════════════════════════
 async function refreshDriveData() {
   if (!state.accessToken || !state.isOnline) {
@@ -602,27 +621,32 @@ async function refreshDriveData() {
   }
   showPopup('جارٍ التحميل...', 'يتم تحميل البيانات من Drive\nيرجى الانتظار...');
   try {
-    const zipFile = await getLatestZip();
-    if (!zipFile) {
-      showPopup('خطأ', `لم يتم العثور على ملف يبدأ بـ:\n"${CONFIG.FOLDER_NAME}"\n\nتحقق من Drive`);
+    // Étape 1 : dossier
+    const folderId = await getDriveFolderId();
+    if (!folderId) {
+      showPopup('خطأ', `المجلد غير موجود في Drive:\n"${CONFIG.FOLDER_NAME}"\n\nتأكد أن التطبيق قام بتشغيل سكريبت النسخ الاحتياطي مرة واحدة على الأقل`);
       return;
     }
 
-    // Télécharger le ZIP en ArrayBuffer
+    // Étape 2 : ZIP le plus récent
+    const zipFile = await getLatestZipInFolder(folderId);
+    if (!zipFile) {
+      showPopup('خطأ', `لا توجد نسخ احتياطية في المجلد:\n"${CONFIG.FOLDER_NAME}"`);
+      return;
+    }
+
+    // Étape 3 : Télécharger le ZIP
     const dlRes = await driveRequest(
       `https://www.googleapis.com/drive/v3/files/${zipFile.id}?alt=media`
     );
     if (!dlRes) return;
     const arrayBuffer = await dlRes.arrayBuffer();
 
-    // Extraire avec JSZip
+    // Étape 4 : Extraire avec JSZip et chercher ref_data.json
     const zip = await JSZip.loadAsync(arrayBuffer);
-
-    // Chercher ref_data.json dans le ZIP (peut être dans un sous-dossier)
     let refEntry = null;
     zip.forEach((relativePath, entry) => {
       if (!entry.dir && relativePath.endsWith('ref_data.json')) {
-        // Prendre celui à la racine (chemin le plus court)
         if (!refEntry || relativePath.length < refEntry.relativePath.length) {
           refEntry = { relativePath, entry };
         }
@@ -630,7 +654,11 @@ async function refreshDriveData() {
     });
 
     if (!refEntry) {
-      showPopup('خطأ', `ref_data.json غير موجود داخل:\n${zipFile.name}`);
+      // Lister les fichiers du ZIP pour aider au debug
+      const zipFiles = [];
+      zip.forEach((p, e) => { if (!e.dir) zipFiles.push(p); });
+      console.log('[HUDARAB] Contenu du ZIP:', zipFiles);
+      showPopup('خطأ', `ref_data.json غير موجود داخل:\n${zipFile.name}\n\nتحقق من console للمزيد`);
       return;
     }
 
