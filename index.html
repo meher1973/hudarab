@@ -566,17 +566,26 @@ async function driveRequest(url, options = {}) {
   return res;
 }
 
+// ════════════════════════════════════════════
+//  GET FOLDER ID — FIX: orderBy modifiedTime desc
+//  → retourne le dossier DATA_backup le plus récent
+// ════════════════════════════════════════════
 async function getFolderId() {
+  const q = encodeURIComponent(
+    `name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
   const res = await driveRequest(
-    `https://www.googleapis.com/drive/v3/files?q=name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`
+    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)`
   );
   if (!res) return null;
   const data = await res.json();
+  // files[0] = le plus récent grâce au tri
   return data.files?.[0]?.id || null;
 }
 
 // ════════════════════════════════════════════
 //  REFRESH DONNÉES DRIVE
+//  FIX: orderBy modifiedTime desc → prend le ref_data.json le plus récent
 // ════════════════════════════════════════════
 async function refreshDriveData() {
   if (!state.accessToken || !state.isOnline) {
@@ -586,20 +595,29 @@ async function refreshDriveData() {
   showPopup('جارٍ التحميل...', 'يتم تحميل البيانات من Drive\nيرجى الانتظار...');
   try {
     const folderId = await getFolderId();
-    if (!folderId) { showPopup('خطأ', `لم يتم العثور على مجلد:\n${CONFIG.FOLDER_NAME}`); return; }
+    if (!folderId) {
+      showPopup('خطأ', `لم يتم العثور على مجلد:\n${CONFIG.FOLDER_NAME}`);
+      return;
+    }
 
-    // Chercher ref_data.json dans le dossier Drive
+    // FIX: orderBy=modifiedTime desc → files[0] = ref_data.json le plus récent
+    const q = encodeURIComponent(
+      `'${folderId}' in parents and name='ref_data.json' and trashed=false`
+    );
     const res = await driveRequest(
-      `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and name='ref_data.json' and trashed=false&fields=files(id,name)`
+      `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)`
     );
     if (!res) return;
     const data = await res.json();
-    const fileId = data.files?.[0]?.id;
 
-    if (!fileId) {
+    if (!data.files || data.files.length === 0) {
       showPopup('تنبيه', 'ملف ref_data.json غير موجود في Drive\nيرجى إنشاؤه أولاً');
       return;
     }
+
+    // Prend toujours le plus récent (index 0 après tri)
+    const fileId       = data.files[0].id;
+    const fileModified = data.files[0].modifiedTime;
 
     const dlRes = await driveRequest(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
@@ -608,11 +626,16 @@ async function refreshDriveData() {
     const ref = await dlRes.json();
     state.refData = ref;
     localStorage.setItem('ref_data', JSON.stringify(ref));
+    localStorage.setItem('ref_data_modified', fileModified);
 
     const nbStudents = Object.values(ref.students || {}).flat().length;
     closePopup();
-    showPopup('✓ تم التحميل',
-      `${ref.classes?.length || 0} قسم\n${nbStudents} تلميذ\n${ref.subjects?.length || 0} مادة`
+
+    // Affiche aussi la date de modification du fichier chargé
+    const modDate = new Date(fileModified).toLocaleString('ar-TN');
+    showPopup(
+      '✓ تم التحميل',
+      `${ref.classes?.length || 0} قسم\n${nbStudents} تلميذ\n${ref.subjects?.length || 0} مادة\n\n📅 آخر تحديث للملف:\n${modDate}`
     );
   } catch(e) {
     showPopup('خطأ', 'فشل التحميل:\n' + e.message);
