@@ -151,6 +151,8 @@
       font-size: 15px;
       margin-bottom: 10px;
       text-align: right;
+      direction: rtl;
+      unicode-bidi: plaintext;
     }
     .note-row {
       display: flex;
@@ -281,7 +283,10 @@
   </div>
 
   <div class="card">
-    <div style="color:var(--muted); font-size:12px; text-align:center; margin-bottom:6px;">آخر مزامنة</div>
+    <div style="color:var(--muted); font-size:12px; text-align:center; margin-bottom:4px;">الحساب المتصل</div>
+    <div id="connected-email" style="text-align:center; font-size:13px; color:var(--accent); margin-bottom:8px;">—</div>
+    <div style="height:1px; background:var(--border); margin:6px 0;"></div>
+    <div style="color:var(--muted); font-size:12px; text-align:center; margin-bottom:4px;">آخر مزامنة</div>
     <div id="last-sync" style="text-align:center; font-size:13px;">—</div>
   </div>
 
@@ -295,6 +300,9 @@
 
   <button class="btn btn-outline" onclick="goTo('screen-login')" id="btn-login">
     🔗 ربط Google Drive
+  </button>
+  <button class="btn btn-outline" onclick="switchAccount()" id="btn-switch" style="display:none; border-color:var(--red); color:var(--red); font-size:13px;">
+    🔄 تغيير الحساب
   </button>
 </div>
 
@@ -419,6 +427,7 @@ const state = {
   tokenExpiry     : parseInt(localStorage.getItem('gd_token_expiry') || '0'),
   pendingQueue    : JSON.parse(localStorage.getItem('pending_queue') || '[]'),
   refData         : JSON.parse(localStorage.getItem('ref_data') || 'null'),
+  connectedEmail  : localStorage.getItem('connected_email') || null,
 };
 
 // ════════════════════════════════════════════
@@ -500,15 +509,33 @@ function updateHome() {
   if (n > 0) badge.textContent = n + ' في الانتظار';
   const ls = localStorage.getItem('last_sync');
   document.getElementById('last-sync').textContent = ls || '—';
-  const btnLogin = document.getElementById('btn-login');
+  const btnLogin  = document.getElementById('btn-login');
+  const btnSwitch = document.getElementById('btn-switch');
+  const emailEl   = document.getElementById('connected-email');
+
   if (state.accessToken && !isTokenExpired()) {
     btnLogin.textContent = '✓ Drive مرتبط';
     btnLogin.classList.add('btn-green');
     btnLogin.classList.remove('btn-outline');
+    btnSwitch.style.display = 'block';
+    if (emailEl && state.connectedEmail) {
+      emailEl.textContent = '👤 ' + state.connectedEmail;
+      emailEl.style.color = 'var(--green)';
+    } else if (emailEl) {
+      emailEl.textContent = '✓ متصل';
+      emailEl.style.color = 'var(--green)';
+      // Récupérer l'email si pas encore chargé
+      fetchUserEmail().then(() => {
+        if (state.connectedEmail && emailEl)
+          emailEl.textContent = '👤 ' + state.connectedEmail;
+      });
+    }
   } else {
     btnLogin.textContent = '🔗 ربط Google Drive';
     btnLogin.classList.remove('btn-green');
     btnLogin.classList.add('btn-outline');
+    btnSwitch.style.display = 'none';
+    if (emailEl) { emailEl.textContent = '—'; emailEl.style.color = 'var(--muted)'; }
   }
 }
 
@@ -520,7 +547,7 @@ function loginGoogle() {
     client_id    : CONFIG.CLIENT_ID,
     redirect_uri : CONFIG.REDIRECT_URI,
     response_type: 'token',
-    scope        : 'https://www.googleapis.com/auth/drive',
+    scope        : 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
     prompt       : 'consent',
   });
   window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
@@ -538,9 +565,42 @@ function checkOAuthCallback() {
     localStorage.setItem('gd_token', token);
     localStorage.setItem('gd_token_expiry', state.tokenExpiry.toString());
     window.history.replaceState({}, '', window.location.pathname);
-    showPopup('✓ تم الربط', 'تم ربط Google Drive بنجاح!\nجارٍ تحميل البيانات...');
-    setTimeout(refreshDriveData, 1200);
+    fetchUserEmail().then(() => {
+      showPopup('✓ تم الربط', 'تم ربط Google Drive بنجاح!\nجارٍ تحميل البيانات...');
+      setTimeout(refreshDriveData, 1200);
+    });
   }
+}
+
+async function fetchUserEmail() {
+  try {
+    const res = await driveRequest('https://www.googleapis.com/oauth2/v2/userinfo');
+    if (!res) return;
+    const info = await res.json();
+    if (info.email) {
+      localStorage.setItem('connected_email', info.email);
+      state.connectedEmail = info.email;
+    }
+  } catch(e) { /* silencieux */ }
+}
+
+function switchAccount() {
+  // Effacer token + email → forcer reconnexion avec sélection de compte
+  state.accessToken   = null;
+  state.tokenExpiry   = 0;
+  state.connectedEmail = null;
+  localStorage.removeItem('gd_token');
+  localStorage.removeItem('gd_token_expiry');
+  localStorage.removeItem('connected_email');
+  // prompt=select_account force Google à afficher le sélecteur de compte
+  const params = new URLSearchParams({
+    client_id    : CONFIG.CLIENT_ID,
+    redirect_uri : CONFIG.REDIRECT_URI,
+    response_type: 'token',
+    scope        : 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
+    prompt       : 'select_account',
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
 // ════════════════════════════════════════════
@@ -744,10 +804,13 @@ function buildGradesList() {
   el.innerHTML = '';
   state.notesData = {};
 
-  state.students.forEach(stu => {
+  state.students.forEach((stu, idx) => {
     const card = document.createElement('div');
     card.className = 'student-card';
-    card.innerHTML = `<div class="student-name">${stu.nom}</div>`;
+    card.innerHTML = `<div class="student-name">
+      <span style="color:var(--muted);font-size:12px;margin-left:8px;">${idx + 1}</span>
+      <bdi>${stu.nom}</bdi>
+    </div>`;
 
     // Note globale
     const noteRow = document.createElement('div');
