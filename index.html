@@ -5,222 +5,384 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4ac32">
   <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
   <title>HUDARAB Mobile</title>
   <style>
+    :root {
+      --bg:      #0d1b2a;
+      --bg2:     #162032;
+      --accent:  #f4ac32;
+      --green:   #06d6a0;
+      --red:     #ef476f;
+      --text:    #e8f4f8;
+      --muted:   #6b8099;
+      --border:  #1e3a5f;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Cairo', 'Segoe UI', sans-serif;
-      background: #0d1b2a;
-      color: #e8f4f8;
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; }
+    /* ── Screens ── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
     .screen.active { display: flex; }
 
-    h1 { color: #f4ac32; font-size: 24px; text-align: center; margin: 20px 0; }
-    h2 { color: #f4ac32; font-size: 18px; text-align: center; margin: 16px 0; }
-
-    .btn {
-      width: 100%; padding: 16px;
-      margin: 8px 0;
-      border: none; border-radius: 10px;
-      font-size: 16px; font-weight: bold;
-      cursor: pointer; transition: opacity 0.2s;
+    /* ── Typography ── */
+    h1 {
+      color: var(--accent);
+      font-size: 26px;
+      font-weight: 900;
+      text-align: center;
+      margin: 12px 0 20px;
+      letter-spacing: 1px;
     }
-    .btn:active { opacity: 0.7; }
-    .btn-accent  { background: #f4ac32; color: #0d1b2a; }
-    .btn-green   { background: #06d6a0; color: #0d1b2a; }
-    .btn-red     { background: #ef476f; color: #fff; }
-    .btn-outline { background: transparent; color: #e8f4f8; border: 1px solid #e8f4f8; }
+    h2 {
+      color: var(--accent);
+      font-size: 19px;
+      font-weight: 700;
+      text-align: center;
+      margin: 10px 0 16px;
+    }
 
-    .card {
-      background: #162032;
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 15px 20px;
+      margin: 6px 0;
+      border: none;
       border-radius: 12px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.85; }
+
+    .btn-accent  { background: var(--accent); color: #0d1b2a; }
+    .btn-green   { background: var(--green);  color: #0d1b2a; }
+    .btn-red     { background: var(--red);    color: #fff; }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 16px;
       margin: 8px 0;
     }
 
+    /* ── Status bar ── */
     .status-bar {
-      display: flex; justify-content: space-between;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      background: #162032;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 16px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       font-size: 13px;
     }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 6px; }
-    .dot-green  { background: #06d6a0; }
-    .dot-red    { background: #ef476f; }
-    .dot-orange { background: #f4ac32; }
+    .dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 7px;
+      vertical-align: middle;
+    }
+    .dot-green  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+    .dot-red    { background: var(--red);    box-shadow: 0 0 6px var(--red); }
+    .dot-orange { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
-    select, input {
-      width: 100%; padding: 12px;
-      background: #162032; color: #e8f4f8;
-      border: 1px solid #2a3f5f;
-      border-radius: 8px; font-size: 15px;
+    /* ── Inputs ── */
+    select, input[type="date"], input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg2);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 15px;
       margin: 6px 0;
-      appearance: none;
-      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--accent); }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 10px;
+      display: block;
     }
 
+    /* ── Student card ── */
     .student-card {
-      background: #162032;
-      border-radius: 10px;
-      padding: 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
       margin: 8px 0;
     }
-    .student-name { color: #f4ac32; font-weight: bold; margin-bottom: 8px; text-align: right; }
-
+    .student-name {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 10px;
+      text-align: right;
+    }
     .note-row {
-      display: flex; align-items: center;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      margin: 4px 0;
+      margin: 5px 0;
     }
-    .note-label { font-size: 13px; color: #a0b4c8; }
+    .note-label { font-size: 13px; color: var(--muted); }
     .note-input {
-      width: 80px; padding: 8px;
-      background: #0d1b2a; color: #e8f4f8;
-      border: 1px solid #2a3f5f;
-      border-radius: 6px; font-size: 14px;
+      width: 85px;
+      padding: 8px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 14px;
       text-align: center;
+      outline: none;
+    }
+    .note-input:focus { border-color: var(--accent); }
+
+    /* ── Badge ── */
+    .badge {
+      background: var(--red);
+      color: #fff;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 12px;
+      font-weight: 700;
     }
 
+    /* ── Spacer ── */
     .spacer { flex: 1; }
-    .pending-badge {
-      background: #ef476f; color: #fff;
-      border-radius: 20px; padding: 2px 10px;
-      font-size: 12px; font-weight: bold;
-    }
 
+    /* ── Popup ── */
     .popup-overlay {
-      display: none; position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      justify-content: center; align-items: center;
-      z-index: 100;
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      backdrop-filter: blur(4px);
     }
     .popup-overlay.active { display: flex; }
     .popup-box {
-      background: #162032; border-radius: 16px;
-      padding: 24px; width: 85%; text-align: center;
+      background: var(--bg2);
+      border: 1px solid var(--accent);
+      border-radius: 18px;
+      padding: 28px 24px;
+      width: 88%;
+      max-width: 360px;
+      text-align: center;
     }
-    .popup-box h3 { color: #f4ac32; margin-bottom: 12px; }
-    .popup-box p  { color: #e8f4f8; margin-bottom: 16px; line-height: 1.5; }
+    .popup-box h3 { color: var(--accent); margin-bottom: 12px; font-size: 18px; }
+    .popup-box p  { color: var(--text); margin-bottom: 20px; line-height: 1.6; font-size: 14px; white-space: pre-line; }
+
+    /* ── Splash logo ── */
+    .logo-circle {
+      width: 90px; height: 90px;
+      background: linear-gradient(135deg, var(--accent), #e07b00);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 30px rgba(244,172,50,0.4);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+
+    /* ── Scroll zone ── */
+    .scroll-zone {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Summary lines ── */
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .summary-line:last-child { border-bottom: none; }
+    .summary-val { color: var(--accent); font-weight: 700; }
   </style>
 </head>
 <body>
 
-<!-- ═══ ÉCRAN 1 : SPLASH ═══ -->
+<!-- ══════════════════════════════════════════
+     ÉCRAN 1 — SPLASH
+══════════════════════════════════════════ -->
 <div id="screen-splash" class="screen active">
   <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-    <div style="font-size:64px; margin-bottom:16px;">📚</div>
-    <h1>HUDARAB</h1>
-    <p style="color:#a0b4c8; text-align:center; margin-bottom:32px;">تطبيق تسجيل النقاط</p>
-    <div id="splash-status" style="color:#a0b4c8; font-size:14px; text-align:center;">
+    <div class="logo-circle">📚</div>
+    <h1 style="font-size:32px; letter-spacing:3px;">HUDARAB</h1>
+    <p style="color:var(--muted); text-align:center; margin-bottom:32px; font-size:15px;">
+      تطبيق تسجيل النقاط
+    </p>
+    <div id="splash-status" style="color:var(--muted); font-size:14px; text-align:center; padding: 0 20px; line-height:1.8;">
       جارٍ التحميل...
     </div>
   </div>
-  <button class="btn btn-accent" onclick="goTo('screen-home')" style="margin-bottom:20px;">
-    دخول ←
-  </button>
+  <button class="btn btn-accent" onclick="goTo('screen-home')">دخول ←</button>
 </div>
 
-<!-- ═══ ÉCRAN 2 : HOME ═══ -->
+<!-- ══════════════════════════════════════════
+     ÉCRAN 2 — HOME
+══════════════════════════════════════════ -->
 <div id="screen-home" class="screen">
-  <h1>HUDARAB Mobile</h1>
+  <h1>HUDARAB</h1>
 
   <div class="status-bar">
-    <div>
+    <div style="display:flex; align-items:center;">
       <span class="dot" id="dot-online"></span>
-      <span id="status-text">جارٍ الفحص...</span>
+      <span id="status-text" style="margin-right:4px;">جارٍ الفحص...</span>
     </div>
-    <span id="pending-badge" class="pending-badge" style="display:none"></span>
+    <span id="pending-badge" class="badge" style="display:none"></span>
   </div>
 
   <div class="card">
-    <p style="color:#a0b4c8; font-size:13px; text-align:center; margin-bottom:12px;">آخر مزامنة</p>
-    <p id="last-sync" style="text-align:center; font-size:13px;">—</p>
+    <div style="color:var(--muted); font-size:12px; text-align:center; margin-bottom:6px;">آخر مزامنة</div>
+    <div id="last-sync" style="text-align:center; font-size:13px;">—</div>
   </div>
 
-  <div class="spacer"></div>
+  <div class="divider"></div>
 
-  <button class="btn btn-accent" onclick="goTo('screen-class')">إدخال نقاط ✏️</button>
-  <button class="btn btn-outline" onclick="syncNow()">مزامنة الآن 🔄</button>
+  <button class="btn btn-accent" onclick="goTo('screen-class')">✏️ إدخال نقاط جديدة</button>
+  <button class="btn btn-outline" onclick="syncNow()">🔄 مزامنة الآن</button>
+  <button class="btn btn-outline" onclick="refreshDriveData()">📥 تحديث البيانات من Drive</button>
+
+  <div class="divider"></div>
+
   <button class="btn btn-outline" onclick="goTo('screen-login')" id="btn-login">
-    ربط Google Drive 🔗
+    🔗 ربط Google Drive
   </button>
 </div>
 
-<!-- ═══ ÉCRAN 3 : LOGIN GOOGLE ═══ -->
+<!-- ══════════════════════════════════════════
+     ÉCRAN 3 — LOGIN GOOGLE
+══════════════════════════════════════════ -->
 <div id="screen-login" class="screen">
   <h1>ربط Google Drive</h1>
-  <div class="card" style="text-align:center; margin: 40px 0;">
-    <div style="font-size:48px; margin-bottom:16px;">🔐</div>
-    <p style="color:#a0b4c8; margin-bottom:24px; line-height:1.6;">
-      اضغط على الزر أدناه للسماح للتطبيق بالوصول إلى Google Drive الخاص بك
+
+  <div class="card" style="text-align:center; margin: 30px 0; padding: 32px 20px;">
+    <div style="font-size:52px; margin-bottom:16px;">🔐</div>
+    <p style="color:var(--muted); margin-bottom:24px; line-height:1.8; font-size:14px;">
+      اضغط على الزر أدناه للسماح للتطبيق<br>بالوصول إلى Google Drive الخاص بك
     </p>
     <button class="btn btn-accent" onclick="loginGoogle()">تسجيل الدخول بـ Google</button>
   </div>
-  <button class="btn btn-outline" onclick="goTo('screen-home')">→ رجوع</button>
-</div>
 
-<!-- ═══ ÉCRAN 4 : SÉLECTION CLASSE ═══ -->
-<div id="screen-class" class="screen">
-  <h2>اختر القسم</h2>
-  <div id="class-list"></div>
   <div class="spacer"></div>
   <button class="btn btn-outline" onclick="goTo('screen-home')">→ رجوع</button>
 </div>
 
-<!-- ═══ ÉCRAN 5 : SÉLECTION MATIÈRE ═══ -->
-<div id="screen-subject" class="screen">
-  <h2>اختر المادة والثلاثي</h2>
+<!-- ══════════════════════════════════════════
+     ÉCRAN 4 — SÉLECTION CLASSE
+══════════════════════════════════════════ -->
+<div id="screen-class" class="screen">
+  <h2>اختر القسم</h2>
+  <div class="scroll-zone">
+    <div id="class-list"></div>
+  </div>
+  <button class="btn btn-outline" onclick="goTo('screen-home')" style="margin-top:12px;">→ رجوع</button>
+</div>
 
-  <label style="color:#a0b4c8; font-size:13px;">الثلاثي</label>
+<!-- ══════════════════════════════════════════
+     ÉCRAN 5 — SÉLECTION MATIÈRE
+══════════════════════════════════════════ -->
+<div id="screen-subject" class="screen">
+  <h2 id="subject-title">اختر المادة</h2>
+
+  <label>الثلاثي</label>
   <select id="select-trimester">
     <option value="1">الثلاثي الأول</option>
     <option value="2">الثلاثي الثاني</option>
     <option value="3">الثلاثي الثالث</option>
   </select>
 
-  <label style="color:#a0b4c8; font-size:13px; margin-top:12px;">نوع التقييم</label>
+  <label>نوع التقييم</label>
   <select id="select-eval-type">
     <option value="exam">امتحان</option>
     <option value="devoir">فرض</option>
     <option value="oral">شفهي</option>
   </select>
 
-  <label style="color:#a0b4c8; font-size:13px; margin-top:12px;">التاريخ</label>
+  <label>التاريخ</label>
   <input type="date" id="input-date">
 
-  <label style="color:#a0b4c8; font-size:13px; margin-top:12px;">المادة</label>
-  <div id="subject-list" style="margin-top:8px;"></div>
+  <label>المادة</label>
+  <div class="scroll-zone" style="margin-top:8px;">
+    <div id="subject-list"></div>
+  </div>
 
-  <div class="spacer"></div>
-  <button class="btn btn-outline" onclick="goTo('screen-class')">→ رجوع</button>
+  <button class="btn btn-outline" onclick="goTo('screen-class')" style="margin-top:12px;">→ رجوع</button>
 </div>
 
-<!-- ═══ ÉCRAN 6 : SAISIE NOTES ═══ -->
+<!-- ══════════════════════════════════════════
+     ÉCRAN 6 — SAISIE NOTES
+══════════════════════════════════════════ -->
 <div id="screen-grades" class="screen">
   <h2 id="grades-title">إدخال النقاط</h2>
-  <div id="grades-list" style="overflow-y:auto; flex:1;"></div>
-  <button class="btn btn-green" onclick="confirmGrades()" style="margin-top:12px;">تأكيد وحفظ ✓</button>
+  <div class="scroll-zone">
+    <div id="grades-list"></div>
+  </div>
+  <button class="btn btn-green" onclick="confirmGrades()" style="margin-top:12px;">تأكيد ✓</button>
   <button class="btn btn-outline" onclick="goTo('screen-subject')">→ رجوع</button>
 </div>
 
-<!-- ═══ ÉCRAN 7 : CONFIRMATION ═══ -->
+<!-- ══════════════════════════════════════════
+     ÉCRAN 7 — CONFIRMATION
+══════════════════════════════════════════ -->
 <div id="screen-confirm" class="screen">
   <h2>ملخص الإدخال</h2>
-  <div id="confirm-summary" class="card"></div>
+  <div class="card" id="confirm-summary"></div>
   <div class="spacer"></div>
   <button class="btn btn-green" onclick="saveAndSync()">✅ حفظ وإرسال</button>
   <button class="btn btn-outline" onclick="goTo('screen-grades')">↩ تعديل</button>
 </div>
 
-<!-- ═══ POPUP ═══ -->
+<!-- ══════════════════════════════════════════
+     POPUP
+══════════════════════════════════════════ -->
 <div id="popup" class="popup-overlay">
   <div class="popup-box">
     <h3 id="popup-title"></h3>
@@ -230,80 +392,70 @@
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-//  CONFIG — À MODIFIER
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════
 const CONFIG = {
-  CLIENT_ID    : 'VOTRE_CLIENT_ID.apps.googleusercontent.com',
-  FOLDER_NAME  : 'HUDARAB_DATA',
-  DB_FILENAME  : 'data20252026.db',
+  CLIENT_ID   : '359964839175-lgcekvobtnrtqr9li4bb7869cft9njnt.apps.googleusercontent.com',
+  FOLDER_NAME : 'HUDARAB_DATA',
+  REDIRECT_URI: 'https://meher1973.github.io/hudarab/',
 };
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  STATE
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 const state = {
-  selectedClass    : null,
-  selectedSubject  : null,
-  trimester        : 1,
-  evalType         : 'exam',
-  date             : new Date().toISOString().split('T')[0],
-  students         : [],
-  criteria         : [],
-  notesData        : {},
-  isOnline         : navigator.onLine,
-  accessToken      : localStorage.getItem('gd_token') || null,
-  pendingQueue     : JSON.parse(localStorage.getItem('pending_queue') || '[]'),
-  refData          : JSON.parse(localStorage.getItem('ref_data') || 'null'),
+  selectedClass   : null,
+  selectedSubject : null,
+  trimester       : 1,
+  evalType        : 'exam',
+  date            : new Date().toISOString().split('T')[0],
+  students        : [],
+  criteria        : [],
+  notesData       : {},
+  isOnline        : navigator.onLine,
+  accessToken     : localStorage.getItem('gd_token') || null,
+  tokenExpiry     : parseInt(localStorage.getItem('gd_token_expiry') || '0'),
+  pendingQueue    : JSON.parse(localStorage.getItem('pending_queue') || '[]'),
+  refData         : JSON.parse(localStorage.getItem('ref_data') || 'null'),
 };
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  SERVICE WORKER
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-// ══════════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════════
-function goTo(screenId) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
-
-  if (screenId === 'screen-home')    updateHome();
-  if (screenId === 'screen-class')   buildClassList();
-  if (screenId === 'screen-subject') buildSubjectList();
-  if (screenId === 'screen-grades')  buildGradesList();
-  if (screenId === 'screen-confirm') buildConfirm();
-}
-
-// ══════════════════════════════════════════════
-//  SPLASH
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
 window.onload = () => {
   document.getElementById('input-date').value = state.date;
   updateOnlineStatus();
+  checkOAuthCallback();
 
   setTimeout(() => {
-    if (state.refData) {
-      document.getElementById('splash-status').textContent = '✓ البيانات محملة محلياً';
-    } else if (state.accessToken) {
-      document.getElementById('splash-status').textContent = 'جارٍ تحميل البيانات من Drive...';
-      refreshReferenceData();
+    const el = document.getElementById('splash-status');
+    if (!state.accessToken || isTokenExpired()) {
+      el.textContent = '⚠️ يرجى ربط Google Drive أولاً';
+    } else if (state.refData) {
+      const nb = state.refData.classes?.length || 0;
+      el.textContent = `✓ ${nb} قسم محمّل — جاهز للاستخدام`;
     } else {
-      document.getElementById('splash-status').textContent = 'يرجى ربط Google Drive أولاً';
+      el.textContent = 'جارٍ تحميل البيانات من Drive...';
+      refreshDriveData();
     }
-  }, 800);
+  }, 900);
 };
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  ONLINE / OFFLINE
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function updateOnlineStatus() {
   state.isOnline = navigator.onLine;
-  const dot  = document.getElementById('dot-online');
-  const txt  = document.getElementById('status-text');
+  const dot = document.getElementById('dot-online');
+  const txt = document.getElementById('status-text');
   if (!dot) return;
   if (state.isOnline) {
     dot.className = 'dot dot-green';
@@ -313,72 +465,97 @@ function updateOnlineStatus() {
     txt.textContent = 'غير متصل — وضع محلي';
   }
 }
-
 window.addEventListener('online',  () => { updateOnlineStatus(); syncPending(); });
 window.addEventListener('offline', updateOnlineStatus);
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  TOKEN
+// ════════════════════════════════════════════
+function isTokenExpired() {
+  return !state.tokenExpiry || Date.now() > state.tokenExpiry - 60000;
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  if (screenId === 'screen-home')    updateHome();
+  if (screenId === 'screen-class')   buildClassList();
+  if (screenId === 'screen-subject') buildSubjectList();
+  if (screenId === 'screen-grades')  buildGradesList();
+  if (screenId === 'screen-confirm') buildConfirm();
+}
+
+// ════════════════════════════════════════════
 //  HOME
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function updateHome() {
   updateOnlineStatus();
   const badge = document.getElementById('pending-badge');
   const n = state.pendingQueue.length;
-  if (n > 0) {
-    badge.style.display = 'inline';
-    badge.textContent = n + ' في الانتظار';
-  } else {
-    badge.style.display = 'none';
-  }
+  badge.style.display = n > 0 ? 'inline' : 'none';
+  if (n > 0) badge.textContent = n + ' في الانتظار';
   const ls = localStorage.getItem('last_sync');
   document.getElementById('last-sync').textContent = ls || '—';
-
   const btnLogin = document.getElementById('btn-login');
-  btnLogin.textContent = state.accessToken ? '✓ Drive مرتبط' : 'ربط Google Drive 🔗';
+  if (state.accessToken && !isTokenExpired()) {
+    btnLogin.textContent = '✓ Drive مرتبط';
+    btnLogin.classList.add('btn-green');
+    btnLogin.classList.remove('btn-outline');
+  } else {
+    btnLogin.textContent = '🔗 ربط Google Drive';
+    btnLogin.classList.remove('btn-green');
+    btnLogin.classList.add('btn-outline');
+  }
 }
 
-// ══════════════════════════════════════════════
-//  GOOGLE LOGIN (OAuth2 Implicit Flow)
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  GOOGLE OAUTH
+// ════════════════════════════════════════════
 function loginGoogle() {
   const params = new URLSearchParams({
-    client_id     : CONFIG.CLIENT_ID,
-    redirect_uri  : window.location.origin + '/hudarab/',
-    response_type : 'token',
-    scope         : 'https://www.googleapis.com/auth/drive',
-    prompt        : 'consent',
+    client_id    : CONFIG.CLIENT_ID,
+    redirect_uri : CONFIG.REDIRECT_URI,
+    response_type: 'token',
+    scope        : 'https://www.googleapis.com/auth/drive',
+    prompt       : 'consent',
   });
   window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
-// Récupérer le token depuis l'URL (après redirect OAuth)
 function checkOAuthCallback() {
   const hash = window.location.hash;
-  if (hash.includes('access_token')) {
-    const params = new URLSearchParams(hash.substring(1));
-    const token  = params.get('access_token');
-    if (token) {
-      state.accessToken = token;
-      localStorage.setItem('gd_token', token);
-      window.history.replaceState({}, '', window.location.pathname);
-      showPopup('✓ تم الربط', 'تم ربط Google Drive بنجاح!\nجارٍ تحميل البيانات...');
-      setTimeout(refreshReferenceData, 1000);
-    }
+  if (!hash.includes('access_token')) return;
+  const params = new URLSearchParams(hash.substring(1));
+  const token  = params.get('access_token');
+  const expiresIn = parseInt(params.get('expires_in') || '3600');
+  if (token) {
+    state.accessToken  = token;
+    state.tokenExpiry  = Date.now() + expiresIn * 1000;
+    localStorage.setItem('gd_token', token);
+    localStorage.setItem('gd_token_expiry', state.tokenExpiry.toString());
+    window.history.replaceState({}, '', window.location.pathname);
+    showPopup('✓ تم الربط', 'تم ربط Google Drive بنجاح!\nجارٍ تحميل البيانات...');
+    setTimeout(refreshDriveData, 1200);
   }
 }
-checkOAuthCallback();
 
-// ══════════════════════════════════════════════
-//  GOOGLE DRIVE API
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  DRIVE API
+// ════════════════════════════════════════════
 async function driveRequest(url, options = {}) {
   if (!state.accessToken) return null;
+  if (isTokenExpired()) {
+    showPopup('انتهت الجلسة', 'يرجى إعادة ربط Google Drive');
+    state.accessToken = null;
+    localStorage.removeItem('gd_token');
+    return null;
+  }
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Authorization': 'Bearer ' + state.accessToken,
-      ...(options.headers || {})
-    }
+    headers: { 'Authorization': 'Bearer ' + state.accessToken, ...(options.headers || {}) }
   });
   if (res.status === 401) {
     state.accessToken = null;
@@ -391,27 +568,38 @@ async function driveRequest(url, options = {}) {
 
 async function getFolderId() {
   const res = await driveRequest(
-    `https://www.googleapis.com/drive/v3/files?q=name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`
+    `https://www.googleapis.com/drive/v3/files?q=name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`
   );
   if (!res) return null;
   const data = await res.json();
   return data.files?.[0]?.id || null;
 }
 
-async function refreshReferenceData() {
-  if (!state.accessToken || !state.isOnline) return;
+// ════════════════════════════════════════════
+//  REFRESH DONNÉES DRIVE
+// ════════════════════════════════════════════
+async function refreshDriveData() {
+  if (!state.accessToken || !state.isOnline) {
+    showPopup('تنبيه', !state.accessToken ? 'يرجى ربط Google Drive أولاً' : 'لا يوجد اتصال بالإنترنت');
+    return;
+  }
+  showPopup('جارٍ التحميل...', 'يتم تحميل البيانات من Drive\nيرجى الانتظار...');
   try {
     const folderId = await getFolderId();
-    if (!folderId) { showPopup('خطأ', `لم يتم العثور على مجلد ${CONFIG.FOLDER_NAME}`); return; }
+    if (!folderId) { showPopup('خطأ', `لم يتم العثور على مجلد:\n${CONFIG.FOLDER_NAME}`); return; }
 
-    // Chercher le fichier JSON de référence
+    // Chercher ref_data.json dans le dossier Drive
     const res = await driveRequest(
       `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and name='ref_data.json' and trashed=false&fields=files(id,name)`
     );
     if (!res) return;
     const data = await res.json();
     const fileId = data.files?.[0]?.id;
-    if (!fileId) { showPopup('تنبيه', 'ملف ref_data.json غير موجود في Drive'); return; }
+
+    if (!fileId) {
+      showPopup('تنبيه', 'ملف ref_data.json غير موجود في Drive\nيرجى إنشاؤه أولاً');
+      return;
+    }
 
     const dlRes = await driveRequest(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
@@ -420,23 +608,31 @@ async function refreshReferenceData() {
     const ref = await dlRes.json();
     state.refData = ref;
     localStorage.setItem('ref_data', JSON.stringify(ref));
+
+    const nbStudents = Object.values(ref.students || {}).flat().length;
+    closePopup();
     showPopup('✓ تم التحميل',
-      `${ref.classes?.length || 0} أقسام\n${Object.values(ref.students||{}).flat().length} تلميذ\n${ref.subjects?.length || 0} مواد`
+      `${ref.classes?.length || 0} قسم\n${nbStudents} تلميذ\n${ref.subjects?.length || 0} مادة`
     );
   } catch(e) {
-    showPopup('خطأ', 'فشل تحميل البيانات: ' + e.message);
+    showPopup('خطأ', 'فشل التحميل:\n' + e.message);
   }
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  CLASSES
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildClassList() {
   const el = document.getElementById('class-list');
   el.innerHTML = '';
   const classes = state.refData?.classes || [];
   if (!classes.length) {
-    el.innerHTML = '<p style="color:#ef476f;text-align:center;margin-top:40px;">لا توجد بيانات — يرجى ربط Drive أولاً</p>';
+    el.innerHTML = `
+      <div style="text-align:center; padding:40px 20px; color:var(--muted);">
+        <div style="font-size:40px; margin-bottom:12px;">📭</div>
+        <p>لا توجد بيانات</p>
+        <p style="font-size:13px; margin-top:8px;">يرجى ربط Drive وتحديث البيانات</p>
+      </div>`;
     return;
   }
   classes.forEach(cls => {
@@ -446,15 +642,16 @@ function buildClassList() {
     btn.onclick = () => {
       state.selectedClass = cls;
       state.students = state.refData?.students?.[cls] || [];
+      document.getElementById('subject-title').textContent = `${cls} — اختر المادة`;
       goTo('screen-subject');
     };
     el.appendChild(btn);
   });
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  MATIÈRES
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildSubjectList() {
   const el = document.getElementById('subject-list');
   el.innerHTML = '';
@@ -462,28 +659,26 @@ function buildSubjectList() {
   subjects.forEach(subj => {
     const btn = document.createElement('button');
     btn.className = 'btn btn-outline';
-    btn.style.marginBottom = '8px';
     btn.textContent = subj.name;
     btn.onclick = () => {
       state.selectedSubject = subj.name;
       state.trimester = parseInt(document.getElementById('select-trimester').value);
       state.evalType  = document.getElementById('select-eval-type').value;
       state.date      = document.getElementById('input-date').value;
-      const allCriteria = state.refData?.criteria?.[subj.name] || [];
-      state.criteria = allCriteria.filter(c => !c.trimester || c.trimester == state.trimester);
+      const allCrit   = state.refData?.criteria?.[subj.name] || [];
+      state.criteria  = allCrit.filter(c => !c.trimester || c.trimester == state.trimester);
       goTo('screen-grades');
     };
     el.appendChild(btn);
   });
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  SAISIE NOTES
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildGradesList() {
   document.getElementById('grades-title').textContent =
     `${state.selectedClass} — ${state.selectedSubject}`;
-
   const el = document.getElementById('grades-list');
   el.innerHTML = '';
   state.notesData = {};
@@ -511,7 +706,8 @@ function buildGradesList() {
       crow.className = 'note-row';
       crow.innerHTML = `<span class="note-label">${crit.name} (/${crit.max_value || '?'})</span>`;
       const ci = document.createElement('input');
-      ci.type = 'number'; ci.min = '0'; ci.max = crit.max_value || 20;
+      ci.type = 'number'; ci.min = '0';
+      ci.max = crit.max_value || 20;
       ci.step = '0.25'; ci.className = 'note-input';
       ci.placeholder = '/' + (crit.max_value || '?');
       crow.appendChild(ci);
@@ -519,21 +715,20 @@ function buildGradesList() {
       critInputs.push(ci);
     });
 
-    state.notesData[stu.id] = { noteEl: noteInp, critEls: critInputs, nom: stu.nom };
+    state.notesData[stu.id] = { noteEl: noteInp, critEls: critInputs };
     el.appendChild(card);
   });
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  CONFIRMATION
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function confirmGrades() {
   let count = 0;
   for (const sid in state.notesData) {
-    const f = state.notesData[sid];
-    if (f.noteEl.value) count++;
+    if (state.notesData[sid].noteEl.value) count++;
   }
-  if (count === 0) { showPopup('تنبيه', 'لم تُدخل أي درجة!'); return; }
+  if (!count) { showPopup('تنبيه', 'لم تُدخل أي درجة!'); return; }
   goTo('screen-confirm');
 }
 
@@ -542,21 +737,23 @@ function buildConfirm() {
   for (const sid in state.notesData) {
     if (state.notesData[sid].noteEl.value) count++;
   }
+  const syncMsg = (state.isOnline && state.accessToken && !isTokenExpired())
+    ? '🟢 سيتم الإرسال إلى Drive مباشرة'
+    : '🟡 سيتم الحفظ محلياً — مزامنة عند الاتصال';
+
   document.getElementById('confirm-summary').innerHTML = `
-    <p>القسم    : <b style="color:#f4ac32">${state.selectedClass}</b></p><br>
-    <p>المادة   : <b style="color:#f4ac32">${state.selectedSubject}</b></p><br>
-    <p>الثلاثي  : <b style="color:#f4ac32">${state.trimester}</b></p><br>
-    <p>التاريخ  : <b style="color:#f4ac32">${state.date}</b></p><br>
-    <p>التلاميذ : <b style="color:#06d6a0">${count} مدخل</b></p><br>
-    <p style="color:#a0b4c8; font-size:13px; margin-top:8px;">
-      ${state.isOnline && state.accessToken ? '🟢 سيتم الإرسال إلى Drive مباشرة' : '🟡 سيتم الحفظ محلياً — مزامنة عند الاتصال'}
-    </p>
+    <div class="summary-line"><span>القسم</span><span class="summary-val">${state.selectedClass}</span></div>
+    <div class="summary-line"><span>المادة</span><span class="summary-val">${state.selectedSubject}</span></div>
+    <div class="summary-line"><span>الثلاثي</span><span class="summary-val">${state.trimester}</span></div>
+    <div class="summary-line"><span>التاريخ</span><span class="summary-val">${state.date}</span></div>
+    <div class="summary-line"><span>عدد التلاميذ</span><span class="summary-val">${count} مدخل</span></div>
+    <div style="text-align:center; margin-top:14px; font-size:13px; color:var(--muted);">${syncMsg}</div>
   `;
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  SAVE & SYNC
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildPayload() {
   const notes = [];
   for (const sid in state.notesData) {
@@ -570,7 +767,8 @@ function buildPayload() {
   return {
     class: state.selectedClass, subject: state.selectedSubject,
     trimester: state.trimester, evaluation_type: state.evalType,
-    date: state.date, notes
+    date: state.date, notes,
+    saved_at: new Date().toISOString()
   };
 }
 
@@ -579,19 +777,21 @@ async function saveAndSync() {
   if (!payload.notes.length) { showPopup('تنبيه', 'لا توجد بيانات للحفظ'); return; }
 
   // Toujours sauvegarder localement d'abord
-  state.pendingQueue.push({ id: Date.now(), payload });
+  const item = { id: Date.now(), payload };
+  state.pendingQueue.push(item);
   localStorage.setItem('pending_queue', JSON.stringify(state.pendingQueue));
 
-  if (state.isOnline && state.accessToken) {
+  if (state.isOnline && state.accessToken && !isTokenExpired()) {
+    showPopup('جارٍ الإرسال...', 'يتم إرسال البيانات إلى Drive...');
     await syncPending();
   } else {
-    showPopup('✓ تم الحفظ', `تم الحفظ محلياً\nسيتم الإرسال عند الاتصال\n(${state.pendingQueue.length} في الانتظار)`);
+    showPopup('✓ تم الحفظ', `تم الحفظ محلياً ✓\nسيتم الإرسال عند الاتصال\n(${state.pendingQueue.length} في الانتظار)`);
   }
-  setTimeout(() => goTo('screen-home'), 2000);
+  setTimeout(() => { closePopup(); goTo('screen-home'); }, 2000);
 }
 
 async function syncPending() {
-  if (!state.isOnline || !state.accessToken || !state.pendingQueue.length) return;
+  if (!state.isOnline || !state.accessToken || isTokenExpired() || !state.pendingQueue.length) return;
 
   const folderId = await getFolderId();
   if (!folderId) return;
@@ -602,7 +802,7 @@ async function syncPending() {
   for (const item of state.pendingQueue) {
     try {
       const filename = `notes_${item.id}.json`;
-      const blob = new Blob([JSON.stringify(item.payload)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(item.payload, null, 2)], { type: 'application/json' });
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify({
         name: filename, parents: [folderId]
@@ -615,7 +815,7 @@ async function syncPending() {
       );
       if (res && res.ok) {
         synced++;
-        localStorage.setItem('last_sync', new Date().toLocaleString('ar'));
+        localStorage.setItem('last_sync', new Date().toLocaleString('ar-TN'));
       } else {
         remaining.push(item);
       }
@@ -628,21 +828,22 @@ async function syncPending() {
   localStorage.setItem('pending_queue', JSON.stringify(remaining));
 
   if (synced > 0) {
-    showPopup('✓ تمت المزامنة', `تم إرسال ${synced} ملف إلى Drive`);
+    closePopup();
+    showPopup('✓ تمت المزامنة', `تم إرسال ${synced} ملف إلى Drive ✓`);
     updateHome();
   }
 }
 
 function syncNow() {
-  if (!state.accessToken) { showPopup('تنبيه', 'يرجى ربط Google Drive أولاً'); return; }
-  if (!state.isOnline)    { showPopup('تنبيه', 'لا يوجد اتصال بالإنترنت'); return; }
-  if (!state.pendingQueue.length) { showPopup('✓', 'لا توجد بيانات في الانتظار'); return; }
+  if (!state.accessToken || isTokenExpired()) { showPopup('تنبيه', 'يرجى ربط Google Drive أولاً'); return; }
+  if (!state.isOnline)                        { showPopup('تنبيه', 'لا يوجد اتصال بالإنترنت'); return; }
+  if (!state.pendingQueue.length)             { showPopup('✓', 'لا توجد بيانات في الانتظار'); return; }
   syncPending();
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  POPUP
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function showPopup(title, msg) {
   document.getElementById('popup-title').textContent = title;
   document.getElementById('popup-msg').textContent   = msg;
