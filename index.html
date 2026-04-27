@@ -7,6 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
   <title>HUDARAB Mobile</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
       --bg:      #0d1b2a;
@@ -567,33 +568,32 @@ async function driveRequest(url, options = {}) {
 }
 
 // ════════════════════════════════════════════
-//  GET FOLDER ID
-//  Cherche tous les dossiers dont le nom COMMENCE par CONFIG.FOLDER_NAME
-//  (ex: DATA_backup_20260426_235347) et retourne le plus récent
+//  GET LATEST ZIP — cherche DATA_backup*.zip le plus récent dans Drive
 // ════════════════════════════════════════════
-async function getFolderId() {
+async function getLatestZip() {
   const q = encodeURIComponent(
-    `name contains '${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    `name contains '${CONFIG.FOLDER_NAME}' and trashed=false`
   );
   const res = await driveRequest(
-    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)`
+    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime,mimeType)`
   );
   if (!res) return null;
   const data = await res.json();
   if (!data.files || data.files.length === 0) return null;
 
-  // Tri JS en backup au cas où l'API ignore orderBy
+  // Tri JS backup au cas où l'API ignore orderBy
   data.files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
 
-  console.log('[HUDARAB] Dossiers trouvés:', data.files.map(f => f.name));
-  console.log('[HUDARAB] Dossier sélectionné:', data.files[0].name);
+  console.log('[HUDARAB] Fichiers trouvés:', data.files.map(f => f.name));
+  console.log('[HUDARAB] Sélectionné:', data.files[0].name);
 
-  return data.files[0].id;
+  return data.files[0]; // { id, name, modifiedTime, mimeType }
 }
 
 // ════════════════════════════════════════════
 //  REFRESH DONNÉES DRIVE
-//  FIX: orderBy modifiedTime desc → prend le ref_data.json le plus récent
+//  Télécharge le ZIP le plus récent, l'extrait via JSZip,
+//  puis lit ref_data.json dedans
 // ════════════════════════════════════════════
 async function refreshDriveData() {
   if (!state.accessToken || !state.isOnline) {
@@ -602,48 +602,50 @@ async function refreshDriveData() {
   }
   showPopup('جارٍ التحميل...', 'يتم تحميل البيانات من Drive\nيرجى الانتظار...');
   try {
-    const folderId = await getFolderId();
-    if (!folderId) {
-      showPopup('خطأ', `لم يتم العثور على أي مجلد يبدأ بـ:\n"${CONFIG.FOLDER_NAME}"\n\nتحقق من اسم المجلد في Drive`);
+    const zipFile = await getLatestZip();
+    if (!zipFile) {
+      showPopup('خطأ', `لم يتم العثور على ملف يبدأ بـ:\n"${CONFIG.FOLDER_NAME}"\n\nتحقق من Drive`);
       return;
     }
 
-    // FIX: orderBy=modifiedTime desc → files[0] = ref_data.json le plus récent
-    const q = encodeURIComponent(
-      `'${folderId}' in parents and name='ref_data.json' and trashed=false`
-    );
-    const res = await driveRequest(
-      `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)`
-    );
-    if (!res) return;
-    const data = await res.json();
-
-    if (!data.files || data.files.length === 0) {
-      showPopup('تنبيه', 'ملف ref_data.json غير موجود في Drive\nيرجى إنشاؤه أولاً');
-      return;
-    }
-
-    // Prend toujours le plus récent (index 0 après tri)
-    const fileId       = data.files[0].id;
-    const fileModified = data.files[0].modifiedTime;
-
+    // Télécharger le ZIP en ArrayBuffer
     const dlRes = await driveRequest(
-      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
+      `https://www.googleapis.com/drive/v3/files/${zipFile.id}?alt=media`
     );
     if (!dlRes) return;
-    const ref = await dlRes.json();
+    const arrayBuffer = await dlRes.arrayBuffer();
+
+    // Extraire avec JSZip
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    // Chercher ref_data.json dans le ZIP (peut être dans un sous-dossier)
+    let refEntry = null;
+    zip.forEach((relativePath, entry) => {
+      if (!entry.dir && relativePath.endsWith('ref_data.json')) {
+        // Prendre celui à la racine (chemin le plus court)
+        if (!refEntry || relativePath.length < refEntry.relativePath.length) {
+          refEntry = { relativePath, entry };
+        }
+      }
+    });
+
+    if (!refEntry) {
+      showPopup('خطأ', `ref_data.json غير موجود داخل:\n${zipFile.name}`);
+      return;
+    }
+
+    const jsonText = await refEntry.entry.async('string');
+    const ref = JSON.parse(jsonText);
     state.refData = ref;
     localStorage.setItem('ref_data', JSON.stringify(ref));
-    localStorage.setItem('ref_data_modified', fileModified);
+    localStorage.setItem('ref_data_modified', zipFile.modifiedTime);
 
     const nbStudents = Object.values(ref.students || {}).flat().length;
+    const modDate = new Date(zipFile.modifiedTime).toLocaleString('ar-TN');
     closePopup();
-
-    // Affiche aussi la date de modification du fichier chargé
-    const modDate = new Date(fileModified).toLocaleString('ar-TN');
     showPopup(
       '✓ تم التحميل',
-      `${ref.classes?.length || 0} قسم\n${nbStudents} تلميذ\n${ref.subjects?.length || 0} مادة\n\n📅 آخر تحديث للملف:\n${modDate}`
+      `📦 ${zipFile.name}\n\n${ref.classes?.length || 0} قسم\n${nbStudents} تلميذ\n${ref.subjects?.length || 0} مادة\n\n📅 ${modDate}`
     );
   } catch(e) {
     showPopup('خطأ', 'فشل التحميل:\n' + e.message);
@@ -821,10 +823,36 @@ async function saveAndSync() {
   setTimeout(() => { closePopup(); goTo('screen-home'); }, 2000);
 }
 
+async function getOrCreateOutputFolder() {
+  // Cherche ou crée un dossier HUDARAB_NOTES pour stocker les fichiers de notes uploadés
+  const q = encodeURIComponent(
+    `name='HUDARAB_NOTES' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
+  const res = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  if (!res) return null;
+  const data = await res.json();
+  if (data.files && data.files.length > 0) return data.files[0].id;
+
+  // Créer le dossier s'il n'existe pas
+  const createRes = await driveRequest(
+    'https://www.googleapis.com/drive/v3/files',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'HUDARAB_NOTES', mimeType: 'application/vnd.google-apps.folder' })
+    }
+  );
+  if (!createRes || !createRes.ok) return null;
+  const created = await createRes.json();
+  return created.id;
+}
+
 async function syncPending() {
   if (!state.isOnline || !state.accessToken || isTokenExpired() || !state.pendingQueue.length) return;
 
-  const folderId = await getFolderId();
+  const folderId = await getOrCreateOutputFolder();
   if (!folderId) return;
 
   let synced = 0;
