@@ -567,20 +567,28 @@ async function driveRequest(url, options = {}) {
 }
 
 // ════════════════════════════════════════════
-//  GET FOLDER ID — FIX: orderBy modifiedTime desc
-//  → retourne le dossier DATA_backup le plus récent
+//  GET FOLDER ID
+//  Cherche tous les dossiers dont le nom COMMENCE par CONFIG.FOLDER_NAME
+//  (ex: DATA_backup_20260426_235347) et retourne le plus récent
 // ════════════════════════════════════════════
 async function getFolderId() {
   const q = encodeURIComponent(
-    `name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    `name contains '${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
   );
   const res = await driveRequest(
     `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)`
   );
   if (!res) return null;
   const data = await res.json();
-  // files[0] = le plus récent grâce au tri
-  return data.files?.[0]?.id || null;
+  if (!data.files || data.files.length === 0) return null;
+
+  // Tri JS en backup au cas où l'API ignore orderBy
+  data.files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
+
+  console.log('[HUDARAB] Dossiers trouvés:', data.files.map(f => f.name));
+  console.log('[HUDARAB] Dossier sélectionné:', data.files[0].name);
+
+  return data.files[0].id;
 }
 
 // ════════════════════════════════════════════
@@ -596,7 +604,7 @@ async function refreshDriveData() {
   try {
     const folderId = await getFolderId();
     if (!folderId) {
-      showPopup('خطأ', `لم يتم العثور على مجلد:\n${CONFIG.FOLDER_NAME}`);
+      showPopup('خطأ', `لم يتم العثور على أي مجلد يبدأ بـ:\n"${CONFIG.FOLDER_NAME}"\n\nتحقق من اسم المجلد في Drive`);
       return;
     }
 
